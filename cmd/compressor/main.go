@@ -30,13 +30,15 @@ func main() {
 	log.Printf("  Delete Source: %t", cfg.deleteSource)
 	log.Printf("  Processing Suffix: %s", cfg.processingSuffix)
 	log.Printf("  Output Extension: %s", cfg.outputExtension)
-	log.Printf("  HTTP Port: %s", cfg.httpPort)
 	if cfg.httpPort == "" {
 		log.Printf("  HTTP server disabled")
+	} else {
+		log.Printf("  HTTP Port: %s", cfg.httpPort)
 	}
-	log.Printf("  Discord Webhook: %s", cfg.discordWebhookURL)
 	if cfg.discordWebhookURL == "" {
 		log.Printf("  Discord notifications disabled")
+	} else {
+		log.Printf("  Discord Webhook: %s", cfg.discordWebhookURL)
 	}
 	log.Printf("  Rescan Interval: %v", cfg.rescanInterval)
 	log.Printf("  Stability Window: %v", cfg.stabilityWindow)
@@ -48,11 +50,11 @@ func main() {
 	}
 	log.Printf("  Video Extensions: %v", exts)
 
-	if err := os.MkdirAll(cfg.inputDir, 0o755); err != nil {
-		log.Fatalf("create input dir: %v", err)
+	if _, err := os.Stat(cfg.inputDir); os.IsNotExist(err) {
+		log.Fatalf("input dir does not exist: %s", cfg.inputDir)
 	}
-	if err := os.MkdirAll(cfg.outputDir, 0o755); err != nil {
-		log.Fatalf("create output dir: %v", err)
+	if _, err := os.Stat(cfg.outputDir); os.IsNotExist(err) {
+		log.Fatalf("output dir does not exist: %s", cfg.outputDir)
 	}
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
