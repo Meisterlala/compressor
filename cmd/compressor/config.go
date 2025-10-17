@@ -30,34 +30,36 @@ const defaultFFMPEGCommandCPU = "-y -i {{input}} -c:v libx265 -preset slow -crf 
 var defaultExtensions = []string{".mp4", ".mkv", ".mov", ".avi", ".flv", ".wmv", ".m4v", ".webm", ".ts"}
 
 type config struct {
-	inputDir         string
-	outputDir        string
-	ffmpegBinary     string
-	ffmpegCommand    string
-	deleteSource     bool
-	processingSuffix string
-	outputExtension  string
-	httpPort         string
-	rescanInterval   time.Duration
-	stabilityWindow  time.Duration
-	queueSize        int
-	maxConcurrent    int
-	extensions       map[string]struct{}
+	inputDir          string
+	outputDir         string
+	ffmpegBinary      string
+	ffmpegCommand     string
+	deleteSource      bool
+	processingSuffix  string
+	outputExtension   string
+	httpPort          string
+	discordWebhookURL string
+	rescanInterval    time.Duration
+	stabilityWindow   time.Duration
+	queueSize         int
+	maxConcurrent     int
+	extensions        map[string]struct{}
 }
 
 func loadConfig() (config, error) {
 	cfg := config{
-		inputDir:         getEnv("INPUT_DIR", defaultInputDir),
-		outputDir:        getEnv("OUTPUT_DIR", defaultOutputDir),
-		ffmpegBinary:     getEnv("FFMPEG_BIN", "ffmpeg"),
-		processingSuffix: getEnv("PROCESSING_SUFFIX", defaultProcessingSuffix),
-		outputExtension:  getEnv("OUTPUT_EXTENSION", defaultOutputExtension),
-		httpPort:         getEnvOrEmpty("PORT"),
-		queueSize:        getEnvInt("QUEUE_SIZE", defaultQueueSize),
-		maxConcurrent:    getEnvInt("MAX_CONCURRENT", defaultMaxConcurrent),
-		rescanInterval:   getEnvDuration("RESCAN_INTERVAL", defaultRescanInterval),
-		stabilityWindow:  getEnvDuration("FILE_STABILITY_DURATION", defaultStabilityDuration),
-		deleteSource:     getEnvBool("DELETE_SOURCE"),
+		inputDir:          getEnv("INPUT_DIR", defaultInputDir),
+		outputDir:         getEnv("OUTPUT_DIR", defaultOutputDir),
+		ffmpegBinary:      getEnv("FFMPEG_BIN", "ffmpeg"),
+		processingSuffix:  getEnv("PROCESSING_SUFFIX", defaultProcessingSuffix),
+		outputExtension:   getEnv("OUTPUT_EXTENSION", defaultOutputExtension),
+		httpPort:          getEnvOrEmpty("PORT"),
+		discordWebhookURL: getEnvOrEmpty("DISCORD_WEBHOOK_URL"),
+		queueSize:         getEnvInt("QUEUE_SIZE", defaultQueueSize),
+		maxConcurrent:     getEnvInt("MAX_CONCURRENT", defaultMaxConcurrent),
+		rescanInterval:    getEnvDuration("RESCAN_INTERVAL", defaultRescanInterval),
+		stabilityWindow:   getEnvDuration("FILE_STABILITY_DURATION", defaultStabilityDuration),
+		deleteSource:      getEnvBool("DELETE_SOURCE"),
 	}
 
 	if cfg.maxConcurrent < 1 {

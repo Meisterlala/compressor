@@ -34,6 +34,10 @@ func main() {
 	if cfg.httpPort == "" {
 		log.Printf("  HTTP server disabled")
 	}
+	log.Printf("  Discord Webhook: %s", cfg.discordWebhookURL)
+	if cfg.discordWebhookURL == "" {
+		log.Printf("  Discord notifications disabled")
+	}
 	log.Printf("  Rescan Interval: %v", cfg.rescanInterval)
 	log.Printf("  Stability Window: %v", cfg.stabilityWindow)
 	log.Printf("  Queue Size: %d", cfg.queueSize)

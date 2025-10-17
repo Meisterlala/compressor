@@ -16,10 +16,18 @@ import (
 )
 
 func processFile(ctx context.Context, cfg config, originalPath string) error {
+	// Get original file size for Discord notifications
+	originalInfo, err := os.Stat(originalPath)
+	if err != nil {
+		return fmt.Errorf("stat original file: %w", err)
+	}
+	originalSize := originalInfo.Size()
+
 	if err := waitForStability(ctx, originalPath, cfg.stabilityWindow); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
+		sendDiscordFailure(cfg.discordWebhookURL, originalPath, fmt.Sprintf("stability check: %v", err))
 		return fmt.Errorf("stability check: %w", err)
 	}
 
@@ -28,6 +36,7 @@ func processFile(ctx context.Context, cfg config, originalPath string) error {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
+		sendDiscordFailure(cfg.discordWebhookURL, originalPath, fmt.Sprintf("rename for processing: %v", err))
 		return fmt.Errorf("rename for processing: %w", err)
 	}
 
@@ -54,10 +63,12 @@ func processFile(ctx context.Context, cfg config, originalPath string) error {
 
 	outputPath, err := buildOutputPath(cfg, originalPath)
 	if err != nil {
+		sendDiscordFailure(cfg.discordWebhookURL, originalPath, fmt.Sprintf("build output path: %v", err))
 		return err
 	}
 
 	if err := runFFMPEG(ctx, cfg, processingPath, outputPath); err != nil {
+		sendDiscordFailure(cfg.discordWebhookURL, originalPath, err.Error())
 		if removeErr := os.Remove(outputPath); removeErr != nil && !errors.Is(removeErr, os.ErrNotExist) {
 			log.Printf("remove partial output %s failed: %v", outputPath, removeErr)
 		}
@@ -66,6 +77,13 @@ func processFile(ctx context.Context, cfg config, originalPath string) error {
 
 	success = true
 	log.Printf("processed %s -> %s", originalPath, outputPath)
+
+	// Send Discord success notification
+	if compressedInfo, err := os.Stat(outputPath); err == nil {
+		compressedSize := compressedInfo.Size()
+		sendDiscordSuccess(cfg.discordWebhookURL, originalPath, originalSize, compressedSize)
+	}
+
 	processed.Store(originalPath, time.Now())
 	return nil
 }

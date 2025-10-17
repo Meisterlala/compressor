@@ -25,6 +25,8 @@ Environment=OUTPUT_DIR=/srv/syncthing/compressor_output
 # Environment=FILE_STABILITY_DURATION=3s
 # HTTP server
 # Environment=PORT=8080
+# Discord notifications
+# Environment=DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/YOUR_WEBHOOK_ID/YOUR_WEBHOOK_TOKEN
 Restart=always
 RestartSec=5
 
