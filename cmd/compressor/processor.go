@@ -223,6 +223,8 @@ func generateThumbnail(ctx context.Context, cfg config, videoPath, thumbnailPath
 
 	// Generate thumbnail at calculated position, full resolution
 	args := []string{
+		"-hide_banner",
+		"-loglevel", "error",
 		"-skip_frame", "nokey", // Skip non-key frames for faster seeking
 		"-i", videoPath,
 		"-ss", seekString, // Seek to calculated position
