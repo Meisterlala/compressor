@@ -31,6 +31,9 @@ func main() {
 	log.Printf("  Processing Suffix: %s", cfg.processingSuffix)
 	log.Printf("  Output Extension: %s", cfg.outputExtension)
 	log.Printf("  HTTP Port: %s", cfg.httpPort)
+	if cfg.httpPort == "" {
+		log.Printf("  HTTP server disabled")
+	}
 	log.Printf("  Rescan Interval: %v", cfg.rescanInterval)
 	log.Printf("  Stability Window: %v", cfg.stabilityWindow)
 	log.Printf("  Queue Size: %d", cfg.queueSize)
@@ -151,9 +154,13 @@ func main() {
 	}()
 
 	serverErrs := make(chan error, 1)
-	go func() {
-		serverErrs <- runHTTPServer(ctx, cfg.httpPort)
-	}()
+	if cfg.httpPort != "" {
+		go func() {
+			serverErrs <- runHTTPServer(ctx, cfg.httpPort)
+		}()
+	} else {
+		close(serverErrs)
+	}
 
 	select {
 	case <-ctx.Done():

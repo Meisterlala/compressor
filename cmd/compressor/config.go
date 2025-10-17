@@ -52,7 +52,7 @@ func loadConfig() (config, error) {
 		ffmpegBinary:     getEnv("FFMPEG_BIN", "ffmpeg"),
 		processingSuffix: getEnv("PROCESSING_SUFFIX", defaultProcessingSuffix),
 		outputExtension:  getEnv("OUTPUT_EXTENSION", defaultOutputExtension),
-		httpPort:         getEnv("PORT", defaultHTTPPort),
+		httpPort:         getEnvOrEmpty("PORT"),
 		queueSize:        getEnvInt("QUEUE_SIZE", defaultQueueSize),
 		maxConcurrent:    getEnvInt("MAX_CONCURRENT", defaultMaxConcurrent),
 		rescanInterval:   getEnvDuration("RESCAN_INTERVAL", defaultRescanInterval),
@@ -115,6 +115,10 @@ func getEnv(key, fallback string) string {
 		return fallback
 	}
 	return val
+}
+
+func getEnvOrEmpty(key string) string {
+	return strings.TrimSpace(os.Getenv(key))
 }
 
 func getEnvBool(key string) bool {

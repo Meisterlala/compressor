@@ -4,13 +4,11 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStartPre=/bin/mkdir -p /srv/synchting/compressor_input
-ExecStartPre=/bin/mkdir -p /srv/synchting/compressor_output
 ExecStart=compressor
 WorkingDirectory=/tmp
 # Input/Output directories
-Environment=INPUT_DIR=/srv/synchting/compressor_input
-Environment=OUTPUT_DIR=/srv/synchting/compressor_output
+Environment=INPUT_DIR=/srv/syncthing/compressor_input
+Environment=OUTPUT_DIR=/srv/syncthing/compressor_output
 # FFmpeg configuration
 # Environment=FFMPEG_BIN=ffmpeg
 # Environment=FFMPEG_COMMAND=-y -hwaccel cuda -hwaccel_device 0 -i {{input}} -c:v hevc_nvenc -qp 25 -preset p6 -gpu 0 -b_qfactor 1.1 -b_ref_mode middle -bf 3 -g 250 -i_qfactor 0.75 -max_muxing_queue_size 1024 -multipass 1 -rc vbr -rc-lookahead 20 -temporal-aq 1 -tune hq -c:a aac -af volume=2.0 {{output}}
