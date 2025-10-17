@@ -87,10 +87,8 @@ func main() {
 			return
 		}
 		// Skip if recently processed to prevent loops
-		if val, ok := processed.Load(path); ok {
-			if recent := val.(time.Time); time.Since(recent) < 10*time.Second {
-				return
-			}
+		if _, ok := processed.Load(path); ok {
+			return
 		}
 		if _, loaded := inProgress.LoadOrStore(path, struct{}{}); loaded {
 			return
