@@ -17,7 +17,7 @@ const (
 	defaultProcessingSuffix  = ".processing"
 	defaultOutputExtension   = ".mp4"
 	defaultQueueSize         = 128
-	defaultMaxConcurrent     = 1
+	defaultMaxConcurrent     = 3
 	defaultHTTPPort          = "8080"
 	defaultRescanInterval    = 30 * time.Second
 	defaultStabilityDuration = 3 * time.Second
@@ -25,7 +25,7 @@ const (
 
 const defaultFFMPEGCommand = "-y -hwaccel cuda -hwaccel_device 0 -i {{input}} -c:v hevc_nvenc -qp 25 -preset p6 -gpu 0 -b_qfactor 1.1 -b_ref_mode middle -bf 3 -g 250 -i_qfactor 0.75 -max_muxing_queue_size 1024 -multipass 1 -rc vbr -rc-lookahead 20 -temporal-aq 1 -tune hq -c:a aac -af volume=2.0 {{output}}"
 
-const defaultFFMPEGCommandCPU = "-y -i {{input}} -c:v libx264 -preset slow -crf 22 -c:a aac {{output}}"
+const defaultFFMPEGCommandCPU = "-y -i {{input}} -c:v libx265 -preset slow -crf 24 -c:a aac -af volume=2.0 {{output}}"
 
 var defaultExtensions = []string{".mp4", ".mkv", ".mov", ".avi", ".flv", ".wmv", ".m4v", ".webm", ".ts"}
 
