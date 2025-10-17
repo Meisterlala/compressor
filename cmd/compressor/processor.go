@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -212,14 +211,14 @@ func generateThumbnail(ctx context.Context, cfg config, videoPath, thumbnailPath
 
 	// First, probe the video duration
 	duration, err := getVideoDuration(ctx, cfg, videoPath)
+	seekString := "0" // Default to frame 1
 	if err != nil {
-		log.Printf("Failed to get video duration, using default seek: %v", err)
-		duration = 10 // fallback to 10 seconds
+		log.Printf("Failed to get video duration, seeking to frame 1: %v", err)
+	} else {
+		// Seek to 10% of the video duration
+		seekTime := duration * 0.1
+		seekString = fmt.Sprintf("%.3f", seekTime)
 	}
-
-	// Seek to 10% of the video duration, but at least 1 second
-	seekTime := math.Max(1.0, duration*0.1)
-	seekString := fmt.Sprintf("%.3f", seekTime)
 
 	// Generate thumbnail at calculated position, full resolution
 	args := []string{
@@ -238,7 +237,7 @@ func generateThumbnail(ctx context.Context, cfg config, videoPath, thumbnailPath
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
 
-	log.Printf("generating thumbnail: %s -> %s (seek to %.1fs)", videoPath, thumbnailPath, seekTime)
+	log.Printf("generating thumbnail: %s -> %s (seek to %s)", videoPath, thumbnailPath, seekString)
 
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("thumbnail generation failed: %w", err)
