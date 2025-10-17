@@ -3,3 +3,11 @@ test_output/
 .git/
 .gitignore
 Readme.md
+
+*.mp4
+
+/compressor
+pkg/
+src/
+
+*.pkg.tar.zst

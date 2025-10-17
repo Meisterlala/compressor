@@ -1,0 +1,14 @@
+pkgbase = compressor-git
+	pkgdesc = Video compressor service that watches input directory and compresses videos using ffmpeg
+	pkgver = r4.c3cc640
+	pkgrel = 1
+	url = https://github.com/meisterlala/compressor
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = git
+	depends = ffmpeg
+	depends = go
+	backup = etc/compressor.env
+
+pkgname = compressor-git

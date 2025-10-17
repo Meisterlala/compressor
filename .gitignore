@@ -3,3 +3,6 @@ test_output/
 *.mp4
 
 /compressor
+pkg/
+src/
+*.pkg.tar.zst

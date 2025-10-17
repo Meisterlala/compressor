@@ -1,0 +1,34 @@
+[Unit]
+Description=Video Compressor Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStartPre=/bin/mkdir -p /srv/synchting/compressor_input
+ExecStartPre=/bin/mkdir -p /srv/synchting/compressor_output
+ExecStart=compressor
+WorkingDirectory=/tmp
+# Input/Output directories
+Environment=INPUT_DIR=/srv/synchting/compressor_input
+Environment=OUTPUT_DIR=/srv/synchting/compressor_output
+# FFmpeg configuration
+# Environment=FFMPEG_BIN=ffmpeg
+# Environment=FFMPEG_COMMAND=-y -hwaccel cuda -hwaccel_device 0 -i {{input}} -c:v hevc_nvenc -qp 25 -preset p6 -gpu 0 -b_qfactor 1.1 -b_ref_mode middle -bf 3 -g 250 -i_qfactor 0.75 -max_muxing_queue_size 1024 -multipass 1 -rc vbr -rc-lookahead 20 -temporal-aq 1 -tune hq -c:a aac -af volume=2.0 {{output}}
+# Environment=FFMPEG_COMMAND_CPU=-y -i {{input}} -c:v libx265 -preset slow -crf 24 -c:a aac -af volume=2.0 {{output}}
+# Processing options
+# Environment=DELETE_SOURCE=false
+# Environment=PROCESSING_SUFFIX=.processing
+# Environment=OUTPUT_EXTENSION=.mp4
+# Environment=VIDEO_EXTENSIONS=.mp4,.mkv,.mov,.avi,.flv,.wmv,.m4v,.webm,.ts
+# Performance tuning
+# Environment=QUEUE_SIZE=128
+# Environment=MAX_CONCURRENT=1
+# Environment=RESCAN_INTERVAL=30s
+# Environment=FILE_STABILITY_DURATION=3s
+# HTTP server
+# Environment=PORT=8080
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

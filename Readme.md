@@ -31,14 +31,46 @@ Environment variables drive the runtime configuration. Defaults are shown in par
 
 Placeholders are shell escaped before the command line is parsed, so paths containing spaces are handled safely.
 
-## Running Locally
+## Installation
+
+### Arch Linux (AUR)
+
+Build and install from source:
 
 ```bash
-go build -o compressor ./cmd/compressor
-INPUT_DIR=$(pwd)/test_input OUTPUT_DIR=$(pwd)/test_output ./compressor
+git clone https://github.com/meisterlala/compressor.git
+cd compressor
+makepkg -si
 ```
 
-Place a video file in `test_input/` and watch it get processed to `test_output/`. The test directories are gitignored.
+This will:
+
+- Install the `compressor` binary to `/usr/bin`
+- Install the systemd user service to `/usr/lib/systemd/user/`
+- Install an example configuration file to `/etc/compressor.env`
+
+After installation, copy the example config and modify it:
+
+```bash
+cp /etc/compressor.env ~/compressor.env
+# Edit ~/compressor.env as needed
+systemctl --user enable compressor.service
+systemctl --user start compressor.service
+```
+
+### Manual Installation
+
+For development or manual installation:
+
+```bash
+git clone https://github.com/meisterlala/compressor.git
+cd compressor
+./install.sh
+```
+
+This builds the binary locally and sets up the user service.
+
+## Running Locally
 
 ## Container Notes
 
