@@ -2,12 +2,15 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 
@@ -81,7 +84,27 @@ func processFile(ctx context.Context, cfg config, originalPath string) error {
 	// Send Discord success notification
 	if compressedInfo, err := os.Stat(outputPath); err == nil {
 		compressedSize := compressedInfo.Size()
-		sendDiscordSuccess(cfg.discordWebhookURL, originalPath, originalSize, compressedSize)
+
+		// Generate thumbnail for Discord webhook
+		thumbnailPath := ""
+		if cfg.discordWebhookURL != "" {
+			// Generate unique thumbnail path in /tmp
+			baseName := filepath.Base(strings.TrimSuffix(originalPath, filepath.Ext(originalPath)))
+			thumbnailPath = fmt.Sprintf("/tmp/compressor_thumb_%s_%d.jpg", baseName, time.Now().UnixNano())
+			if thumbErr := generateThumbnail(ctx, cfg, outputPath, thumbnailPath); thumbErr != nil {
+				log.Printf("Failed to generate thumbnail: %v", thumbErr)
+				thumbnailPath = "" // Continue without thumbnail
+			}
+		}
+
+		sendDiscordSuccessWithThumbnail(cfg.discordWebhookURL, originalPath, originalSize, compressedSize, thumbnailPath)
+
+		// Clean up thumbnail file
+		if thumbnailPath != "" {
+			if err := os.Remove(thumbnailPath); err != nil && !errors.Is(err, os.ErrNotExist) {
+				log.Printf("Failed to clean up thumbnail %s: %v", thumbnailPath, err)
+			}
+		}
 	}
 
 	processed.Store(originalPath, time.Now())
@@ -180,4 +203,80 @@ func runFFMPEG(ctx context.Context, cfg config, inputPath, outputPath string) er
 		return fmt.Errorf("ffmpeg failed: %w", err)
 	}
 	return nil
+}
+
+func generateThumbnail(ctx context.Context, cfg config, videoPath, thumbnailPath string) error {
+	if err := os.MkdirAll(filepath.Dir(thumbnailPath), 0o755); err != nil {
+		return fmt.Errorf("prepare thumbnail dir: %w", err)
+	}
+
+	// First, probe the video duration
+	duration, err := getVideoDuration(ctx, cfg, videoPath)
+	if err != nil {
+		log.Printf("Failed to get video duration, using default seek: %v", err)
+		duration = 10 // fallback to 10 seconds
+	}
+
+	// Seek to 10% of the video duration, but at least 1 second
+	seekTime := math.Max(1.0, duration*0.1)
+	seekString := fmt.Sprintf("%.3f", seekTime)
+
+	// Generate thumbnail at calculated position, full resolution
+	args := []string{
+		"-skip_frame", "nokey", // Skip non-key frames for faster seeking
+		"-i", videoPath,
+		"-ss", seekString, // Seek to calculated position
+		"-vframes", "1", // Extract 1 frame
+		"-y", // Overwrite output
+		thumbnailPath,
+	}
+
+	cmd := exec.CommandContext(ctx, cfg.ffmpegBinary, args...)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Env = os.Environ()
+
+	log.Printf("generating thumbnail: %s -> %s (seek to %.1fs)", videoPath, thumbnailPath, seekTime)
+
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf("thumbnail generation failed: %w", err)
+	}
+	return nil
+}
+
+func getVideoDuration(ctx context.Context, cfg config, videoPath string) (float64, error) {
+	// Use ffprobe to get video duration
+	// Assume ffprobe is available alongside ffmpeg
+	ffprobePath := strings.Replace(cfg.ffmpegBinary, "ffmpeg", "ffprobe", 1)
+
+	args := []string{
+		"-v", "quiet",
+		"-print_format", "json",
+		"-show_format",
+		videoPath,
+	}
+
+	cmd := exec.CommandContext(ctx, ffprobePath, args...)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0, fmt.Errorf("ffprobe failed: %w", err)
+	}
+
+	// Parse the JSON output to extract duration
+	var probeResult struct {
+		Format struct {
+			Duration string `json:"duration"`
+		} `json:"format"`
+	}
+
+	if err := json.Unmarshal(output, &probeResult); err != nil {
+		return 0, fmt.Errorf("parse ffprobe output: %w", err)
+	}
+
+	duration, err := strconv.ParseFloat(probeResult.Format.Duration, 64)
+	if err != nil {
+		return 0, fmt.Errorf("parse duration: %w", err)
+	}
+
+	return duration, nil
 }
