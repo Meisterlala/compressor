@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: compressor
+  namespace: compressor
+  labels:
+    app: compressor
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: compressor
+  template:
+    metadata:
+      labels:
+        app: compressor
+    spec:
+      containers:
+        - name: compressor
+          image: compressor:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: INPUT_DIR
+              value: "/input"
+            - name: OUTPUT_DIR
+              value: "/output"
+            - name: DELETE_SOURCE
+              value: "false"
+            - name: MAX_CONCURRENT
+              value: "1"
+          volumeMounts:
+            - name: input-volume
+              mountPath: /input
+            - name: output-volume
+              mountPath: /output
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "500m"
+              nvidia.com/gpu: 1
+            limits:
+              memory: "1Gi"
+              cpu: "1000m"
+              nvidia.com/gpu: 1
+      volumes:
+        - name: input-volume
+          persistentVolumeClaim:
+            claimName: compressor-input
+        - name: output-volume
+          persistentVolumeClaim:
+            claimName: compressor-output

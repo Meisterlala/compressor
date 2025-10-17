@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  compressor:
+    build: .
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./test_input:/input
+      - ./test_output:/output
+    environment:
+      - INPUT_DIR=/input
+      - OUTPUT_DIR=/output
+      - DELETE_SOURCE=false
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped

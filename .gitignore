@@ -1,0 +1,5 @@
+test_input/
+test_output/
+*.mp4
+
+/compressor
