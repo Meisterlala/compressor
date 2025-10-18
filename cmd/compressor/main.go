@@ -206,6 +206,9 @@ func shouldProcess(cfg config, path string) bool {
 	if !info.Mode().IsRegular() {
 		return false
 	}
+	if strings.HasPrefix(filepath.Base(path), ".") {
+		return false
+	}
 	if strings.HasSuffix(path, cfg.processingSuffix) {
 		return false
 	}
