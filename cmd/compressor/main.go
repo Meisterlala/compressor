@@ -123,7 +123,9 @@ func main() {
 		log.Fatalf("watch dir: %v", err)
 	}
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		for {
 			select {
 			case <-ctx.Done():
@@ -144,7 +146,9 @@ func main() {
 		}
 	}()
 
+	wg.Add(1)
 	go func() {
+		defer wg.Done()
 		ticker := time.NewTicker(cfg.rescanInterval)
 		defer ticker.Stop()
 		for {
@@ -161,14 +165,18 @@ func main() {
 
 	serverErrs := make(chan error, 1)
 	if cfg.httpPort != "" {
+		wg.Add(1)
 		go func() {
+			defer wg.Done()
 			serverErrs <- runHTTPServer(ctx, cfg.httpPort)
 		}()
 	} else {
 		close(serverErrs)
 	}
 
+	log.Println("Startup Done")
 	<-ctx.Done()
+	log.Println("Shutting down...")
 
 	dispatcherCancel()
 	wg.Wait()

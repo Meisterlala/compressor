@@ -1,6 +1,6 @@
 # Maintainer: Misti <your@email>
 pkgname=compressor-git
-pkgver=r15.acc0888
+pkgver=r16.0a9cb23
 pkgrel=1
 pkgdesc="Video compressor service that watches input directory and compresses videos using ffmpeg"
 arch=('x86_64' 'aarch64')
