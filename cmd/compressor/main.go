@@ -168,13 +168,7 @@ func main() {
 		close(serverErrs)
 	}
 
-	select {
-	case <-ctx.Done():
-	case err := <-serverErrs:
-		if err != nil {
-			log.Printf("http server error: %v", err)
-		}
-	}
+	<-ctx.Done()
 
 	dispatcherCancel()
 	wg.Wait()
