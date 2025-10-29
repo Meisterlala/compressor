@@ -1,29 +1,143 @@
-# This workflow will build a golang project
+# Build and Release workflow for Go
 name: Go
+
 on:
   push:
     branches: [ "master" ]
+    tags:
+      - "v*"
   pull_request:
     branches: [ "master" ]
+
+permissions:
+  contents: write  # needed to create releases
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux
+          - goos: linux
+            goarch: amd64
+            ext: ""
+          - goos: linux
+            goarch: arm64
+            ext: ""
+          - goos: linux
+            goarch: arm
+            goarm: "7"
+            ext: ""
+          # Windows
+          - goos: windows
+            goarch: amd64
+            ext: ".exe"
+          - goos: windows
+            goarch: arm64
+            ext: ".exe"
+          # macOS
+          - goos: darwin
+            goarch: arm64
+            ext: ""
+          - goos: darwin
+            goarch: amd64
+            ext: ""
+
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: '1.21'
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
 
-    - name: Build
-      run: go build -o compressor -v ./...
-      
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v5.0.0
-      with:
-        # Artifact name
-        name: compressor-bin
-        # A file, directory or wildcard pattern that describes what to upload
-        path: compressor
+      - name: Build ${{ matrix.goos }}/${{ matrix.goarch }}${{ matrix.goarm && format(' (GOARM={0})', matrix.goarm) || '' }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: 0
+          GOARM: ${{ matrix.goarm || '' }}
+        run: |
+          mkdir -p dist
+          if [ -n "${GOARM}" ]; then SUF="${GOOS}-${GOARCH}-${GOARM}"; else SUF="${GOOS}-${GOARCH}"; fi
+          OUT="dist/compressor-${SUF}${{ matrix.ext }}"
+          echo "Building -> $OUT"
+          go build -trimpath -ldflags "-s -w" -o "$OUT" ./...
+
+      - name: Upload artifact ${{ matrix.goos }}/${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: compressor-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}
+          path: dist/compressor-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.goarm && format('-{0}', matrix.goarm) || '' }}${{ matrix.ext }}
+          if-no-files-found: error
+
+  release_sha:
+    name: Create per-commit prerelease
+    needs: build
+    runs-on: ubuntu-latest
+    # Only create releases for direct pushes to master (not PRs)
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: compressor-*
+          merge-multiple: true
+          path: dist
+
+      - name: Show downloaded files
+        run: |
+          echo "Downloaded artifacts:"
+          ls -R dist
+
+      - name: Create prerelease for commit
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: commit-${{ github.sha }}
+          name: Commit ${{ github.sha }}
+          prerelease: true
+          body: |
+            Automated prerelease for commit ${{ github.sha }} on ${{ github.ref_name }}.
+            Includes cross-compiled binaries:
+            - linux/amd64
+            - linux/arm64
+            - linux/arm (GOARM=7)
+            - windows/amd64
+            - windows/arm64
+            - darwin/amd64
+            - darwin/arm64
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  release_tag:
+    name: Create tagged release
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: compressor-*
+          merge-multiple: true
+          path: dist
+
+      - name: Show downloaded files
+        run: |
+          echo "Downloaded artifacts:"
+          ls -R dist
+
+      - name: Create GitHub Release with binaries
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          prerelease: false
+          files: |
+            dist/*
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
