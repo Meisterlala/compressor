@@ -33,6 +33,17 @@ func processFile(ctx context.Context, cfg config, originalPath string) error {
 		return fmt.Errorf("stability check: %w", err)
 	}
 
+	// If the intended output already exists, do not queue/process this input.
+	outputPath, err := buildOutputPath(cfg, originalPath)
+	if err != nil {
+		if errors.Is(err, os.ErrExist) {
+			log.Printf("skip %s: output already exists: %v", originalPath, err)
+			return nil
+		}
+		sendDiscordFailure(cfg.discordWebhookURL, originalPath, fmt.Sprintf("build output path: %v", err))
+		return err
+	}
+
 	processingPath := originalPath + cfg.processingSuffix
 	if err := os.Rename(originalPath, processingPath); err != nil {
 		if errors.Is(err, os.ErrNotExist) {
@@ -62,12 +73,6 @@ func processFile(ctx context.Context, cfg config, originalPath string) error {
 			}
 		}
 	}()
-
-	outputPath, err := buildOutputPath(cfg, originalPath)
-	if err != nil {
-		sendDiscordFailure(cfg.discordWebhookURL, originalPath, fmt.Sprintf("build output path: %v", err))
-		return err
-	}
 
 	if err := runFFMPEG(ctx, cfg, processingPath, outputPath); err != nil {
 		sendDiscordFailure(cfg.discordWebhookURL, originalPath, err.Error())
@@ -162,20 +167,18 @@ func buildOutputPath(cfg config, originalPath string) (string, error) {
 		ext = "." + ext
 	}
 
-	candidate := filepath.Join(cfg.outputDir, base+ext)
-	if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
-		return candidate, nil
-	}
 	if err := os.MkdirAll(cfg.outputDir, 0o755); err != nil {
 		return "", fmt.Errorf("ensure output dir: %w", err)
 	}
-	for idx := 1; idx < 10_000; idx++ {
-		candidate = filepath.Join(cfg.outputDir, fmt.Sprintf("%s_%d%s", base, idx, ext))
-		if _, err := os.Stat(candidate); errors.Is(err, os.ErrNotExist) {
-			return candidate, nil
-		}
+
+	candidate := filepath.Join(cfg.outputDir, base+ext)
+	if _, err := os.Stat(candidate); err == nil {
+		return "", fmt.Errorf("output already exists: %s: %w", candidate, os.ErrExist)
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return "", fmt.Errorf("stat output candidate: %w", err)
 	}
-	return "", fmt.Errorf("unable to find free output name for %s", originalPath)
+
+	return candidate, nil
 }
 
 func runFFMPEG(ctx context.Context, cfg config, inputPath, outputPath string) error {

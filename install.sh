@@ -9,7 +9,7 @@ makepkg -si --noextract
 
 echo "Enabling and starting the user service..."
 systemctl --user enable compressor.service
-systemctl --user start compressor.service
+systemctl --user restart compressor.service
 
 echo "Service status:"
 systemctl --user status compressor.service
