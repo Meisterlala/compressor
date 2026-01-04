@@ -14,7 +14,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-var processed sync.Map // track recently processed files to prevent loops
+var processed sync.Map // track recently handled files to prevent loops
 
 func main() {
 	cfg, err := loadConfig()
@@ -95,7 +95,7 @@ func main() {
 		if !shouldProcess(cfg, path) {
 			return
 		}
-		// Skip if recently processed to prevent loops
+		// Skip if recently handled (processed or intentionally skipped) to prevent loops
 		if _, ok := processed.Load(path); ok {
 			return
 		}

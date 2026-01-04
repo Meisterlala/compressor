@@ -38,6 +38,7 @@ func processFile(ctx context.Context, cfg config, originalPath string) error {
 	if err != nil {
 		if errors.Is(err, os.ErrExist) {
 			log.Printf("skip %s: output already exists: %v", originalPath, err)
+			processed.Store(originalPath, time.Now())
 			return nil
 		}
 		sendDiscordFailure(cfg.discordWebhookURL, originalPath, fmt.Sprintf("build output path: %v", err))
