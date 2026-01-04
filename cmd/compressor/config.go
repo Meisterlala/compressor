@@ -23,7 +23,7 @@ const (
 	defaultStabilityDuration = 3 * time.Second
 )
 
-const defaultFFMPEGCommand = "-y -hide_banner -nostats -hwaccel cuda -hwaccel_device 0 -i {{input}} -c:v hevc_nvenc -qp 25 -preset p6 -gpu 0 -b_qfactor 1.1 -b_ref_mode middle -bf 3 -g 250 -i_qfactor 0.75 -max_muxing_queue_size 1024 -multipass 1 -rc vbr -rc-lookahead 20 -temporal-aq 1 -tune hq -c:a aac -af volume=2.0 {{output}}"
+const defaultFFMPEGCommand = "-y -hide_banner -nostats -hwaccel cuda -hwaccel_device 0 -i {{input}} -c:v hevc_nvenc -vf format=nv12 -qp 25 -preset p6 -gpu 0 -b_qfactor 1.1 -b_ref_mode middle -bf 3 -g 250 -i_qfactor 0.75 -max_muxing_queue_size 1024 -multipass 1 -rc vbr -rc-lookahead 20 -temporal-aq 1 -tune hq -c:a aac -af volume=2.0 {{output}}"
 
 const defaultFFMPEGCommandCPU = "-y -hide_banner -nostats -i {{input}} -c:v libx265 -preset slow -crf 24 -c:a aac -af volume=2.0 {{output}}"
 
