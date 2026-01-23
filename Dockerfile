@@ -14,7 +14,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o compressor ./cmd/compressor
 
 # Runtime stage with CUDA support
-FROM nvidia/cuda:13.0.1-runtime-ubuntu22.04
+FROM nvidia/cuda:13.1.1-runtime-ubuntu22.04
 
 # Install ffmpeg and ca-certificates
 RUN apt-get update && apt-get install -y ffmpeg ca-certificates && rm -rf /var/lib/apt/lists/*
